@@ -1,1 +1,94 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #2c3e50;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.screen {
+    display: none;
+    text-align: center;
+}
+
+.screen.active {
+    display: block;
+}
+
+#start-screen {
+    max-width: 400px;
+    padding: 20px;
+}
+
+h1 {
+    color: #f39c12;
+    margin-bottom: 30px;
+}
+
+button {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    margin: 10px;
+    border-radius: 30px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #2980b9;
+}
+
+#join-section {
+    margin: 20px 0;
+}
+
+input {
+    padding: 12px;
+    border-radius: 30px;
+    border: none;
+    width: 150px;
+    font-size: 16px;
+    text-align: center;
+}
+
+#game-canvas {
+    background: #1a2b3c;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+#game-ui {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.player-status {
+    margin: 5px 0;
+    padding: 5px;
+    border-bottom: 1px solid #34495e;
+}
+
+#players-list {
+    margin-top: 30px;
+}
+
+.player-badge {
+    display: inline-block;
+    background: #3498db;
+    padding: 8px 15px;
+    border-radius: 20px;
+    margin: 5px;
+}
 
