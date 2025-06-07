@@ -3,7 +3,7 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 tg.enableClosingConfirmation();
 
-const socket = io('http://localhost:3000'); // Замените на ваш URL сервера
+const socket = io(https://jef1207.github.io/321/'); // Замените на ваш URL сервера
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 
