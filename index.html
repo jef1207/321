@@ -8,7 +8,33 @@
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/react-router-dom@6/dist/umd/react-router-dom.development.js"></script>
+    <script src="https://unpkg.com/@nextui-org/react@2.4.0/dist/index.umd.js"></script>
     <style>
+        /* Ваш index.css */
+        body {
+            color: var(--tg-theme-text-color);
+            background: var(--tg-theme-bg-color);
+        }
+        
+        .hint {
+            color: var(--tg-theme-hint-color);
+        }
+        
+        .link {
+            color: var(--tg-theme-link-color);
+        }
+        
+        .tg-button {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+        
+        .card {
+            background: var(--tg-theme-bg-color);
+        }
+        
+        /* Расширенные стили для приложения */
         * {
             margin: 0;
             padding: 0;
@@ -30,22 +56,18 @@
         }
         
         body {
-            color: var(--tg-theme-text-color);
-            background: var(--tg-theme-bg-color);
             scroll-behavior: smooth;
             padding: 0;
             overflow-x: hidden;
         }
         
-        /* Telegram WebApp стили */
+        /* Улучшенные стили для классов из вашего index.css */
         .hint {
-            color: var(--tg-theme-hint-color);
             font-size: 0.875rem;
             line-height: 1.25rem;
         }
         
         .link {
-            color: var(--tg-theme-link-color);
             position: relative;
             text-decoration: none;
             transition: color 0.3s;
@@ -55,9 +77,22 @@
             color: var(--tg-theme-button-color);
         }
         
+        .link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: currentColor;
+            transition: width 0.3s;
+        }
+        
+        .link:hover::after {
+            width: 100%;
+        }
+        
         .tg-button {
-            background: var(--tg-theme-button-color);
-            color: var(--tg-theme-button-text-color);
             border-radius: 10px;
             padding: 0.75rem 1.5rem;
             font-weight: 500;
@@ -83,7 +118,6 @@
         }
         
         .card {
-            background: var(--tg-theme-secondary-bg-color);
             border-radius: 12px;
             padding: 1.25rem;
             transition: all 0.3s ease;
@@ -123,6 +157,9 @@
             max-width: 100%;
             padding: 16px;
             margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         
         .app-header {
@@ -269,15 +306,6 @@
             font-size: 1rem;
         }
         
-        .date-picker {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .date-input {
-            flex: 1;
-        }
-        
         .confirmation-card {
             text-align: center;
             padding: 40px 20px;
@@ -308,18 +336,46 @@
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
             z-index: 10;
         }
+        
+        .nextui-backdrop {
+            background: rgba(0, 0, 0, 0.5) !important;
+        }
+        
+        .nextui-modal {
+            background: var(--tg-theme-bg-color) !important;
+            color: var(--tg-theme-text-color) !important;
+            border-radius: 16px !important;
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
     
     <script type="text/babel">
+        // Импорты из глобальных объектов
         const { useState, useEffect } = React;
+        const { 
+            createBrowserRouter, 
+            RouterProvider, 
+            useNavigate, 
+            useParams,
+            useLocation
+        } = ReactRouterDOM;
+        const { 
+            NextUIProvider, 
+            Button, 
+            Modal, 
+            ModalContent, 
+            ModalHeader, 
+            ModalBody, 
+            ModalFooter,
+            Input
+        } = NextUI;
         
         // Данные о местах
         const venuesData = [
             {
-                id: 1,
+                id: "1",
                 name: "Grand Ballroom",
                 location: "Main Building",
                 description: "Elegant ballroom with crystal chandeliers and marble floors. Perfect for weddings, galas, and corporate events.",
@@ -328,7 +384,7 @@
                 image: "🎪"
             },
             {
-                id: 2,
+                id: "2",
                 name: "Conference Hall",
                 location: "West Wing",
                 description: "Modern conference facility with state-of-the-art audiovisual equipment and comfortable seating.",
@@ -337,7 +393,7 @@
                 image: "🏛️"
             },
             {
-                id: 3,
+                id: "3",
                 name: "Garden Pavilion",
                 location: "Outdoor",
                 description: "Beautiful outdoor venue surrounded by manicured gardens. Ideal for summer parties and ceremonies.",
@@ -346,7 +402,7 @@
                 image: "🏕️"
             },
             {
-                id: 4,
+                id: "4",
                 name: "Executive Boardroom",
                 location: "Top Floor",
                 description: "Intimate space with panoramic city views. Perfect for high-level meetings and presentations.",
@@ -356,89 +412,19 @@
             }
         ];
         
-        // Главный компонент приложения
-        function App() {
-            const [view, setView] = useState('list'); // 'list', 'detail', 'booking', 'confirmation'
-            const [selectedVenue, setSelectedVenue] = useState(null);
-            const [bookingData, setBookingData] = useState({
-                name: '',
-                email: '',
-                phone: '',
-                date: '',
-                guests: 1
-            });
+        // Компонент BaseLayout
+        function BaseLayout() {
+            const navigate = useNavigate();
+            const location = useLocation();
             
-            // Инициализация Telegram Web App
-            useEffect(() => {
-                Telegram.WebApp.ready();
-                Telegram.WebApp.expand();
-                
-                // Установка цвета фона
-                document.body.style.backgroundColor = Telegram.WebApp.themeParams.bg_color || '#ffffff';
-            }, []);
-            
-            // Показать детали места
-            const showVenueDetail = (venue) => {
-                setSelectedVenue(venue);
-                setView('detail');
-            };
-            
-            // Начать бронирование
-            const startBooking = () => {
-                setView('booking');
-            };
-            
-            // Подтверждение бронирования
-            const confirmBooking = () => {
-                setView('confirmation');
-            };
-            
-            // Вернуться к списку
-            const goBackToList = () => {
-                setView('list');
-            };
-            
-            // Вернуться к деталям
-            const goBackToDetail = () => {
-                setView('detail');
-            };
-            
-            // Обновление данных бронирования
-            const handleInputChange = (e) => {
-                const { name, value } = e.target;
-                setBookingData(prev => ({
-                    ...prev,
-                    [name]: value
-                }));
-            };
-            
-            // Рендеринг текущего вида
-            const renderView = () => {
-                switch(view) {
-                    case 'list':
-                        return <VenueList venues={venuesData} onSelect={showVenueDetail} />;
-                    case 'detail':
-                        return <VenueDetail venue={selectedVenue} onBook={startBooking} onBack={goBackToList} />;
-                    case 'booking':
-                        return <BookingForm 
-                            venue={selectedVenue} 
-                            bookingData={bookingData} 
-                            onChange={handleInputChange} 
-                            onSubmit={confirmBooking} 
-                            onBack={goBackToDetail} 
-                        />;
-                    case 'confirmation':
-                        return <Confirmation venue={selectedVenue} bookingData={bookingData} onBack={goBackToList} />;
-                    default:
-                        return <VenueList venues={venuesData} onSelect={showVenueDetail} />;
-                }
-            };
+            // Проверяем, находимся ли мы на главной странице
+            const isHome = location.pathname === "/";
             
             return (
                 <div className="app-container">
                     <header className="app-header">
-                        {view !== 'list' && (
-                            <button className="back-button" onClick={view === 'confirmation' ? goBackToList : view === 'booking' ? goBackToDetail : goBackToList}>
+                        {!isHome && (
+                            <button className="back-button" onClick={() => navigate(-1)}>
                                 ←
                             </button>
                         )}
@@ -448,32 +434,35 @@
                         </div>
                     </header>
                     
-                    <main>
-                        {renderView()}
+                    <main style={{ flexGrow: 1 }}>
+                        {/* Здесь будут рендериться дочерние компоненты */}
+                        <Outlet />
                     </main>
-                    
-                    {(view === 'detail' || view === 'booking') && (
-                        <div className="fixed-footer">
-                            <button className="tg-button" onClick={view === 'detail' ? startBooking : confirmBooking}>
-                                {view === 'detail' ? 'Book Now' : 'Confirm Booking'}
-                            </button>
-                        </div>
-                    )}
                 </div>
             );
         }
         
-        // Компонент списка мест
-        function VenueList({ venues, onSelect }) {
+        // Главная страница
+        function Index() {
+            const navigate = useNavigate();
+            
+            const showVenueDetail = (venueId) => {
+                navigate(`/book/${venueId}`);
+            };
+            
             return (
                 <div className="section">
                     <h2 className="section-title">Available Venues</h2>
                     <div className="venue-grid">
-                        {venues.map(venue => (
-                            <div key={venue.id} className="card venue-card" onClick={() => onSelect(venue)}>
+                        {venuesData.map(venue => (
+                            <div 
+                                key={venue.id} 
+                                className="card venue-card" 
+                                onClick={() => showVenueDetail(venue.id)}
+                            >
                                 <div className="venue-image">{venue.image}</div>
                                 <h3 className="venue-name">{venue.name}</h3>
-                                <div className="venue-location">
+                                <div className="venue-location hint">
                                     <span>📍</span> {venue.location}
                                 </div>
                             </div>
@@ -483,14 +472,55 @@
             );
         }
         
-        // Компонент деталей места
-        function VenueDetail({ venue, onBook, onBack }) {
+        // Страница бронирования
+        function BookingIndex() {
+            const { venueId } = useParams();
+            const navigate = useNavigate();
+            const [bookingData, setBookingData] = useState({
+                name: '',
+                email: '',
+                phone: '',
+                date: '',
+                guests: 1
+            });
+            const [showConfirmation, setShowConfirmation] = useState(false);
+            
+            // Найти venue по ID
+            const venue = venuesData.find(v => v.id === venueId);
+            
+            // Если venue не найден, вернуться на главную
+            useEffect(() => {
+                if (!venue) {
+                    navigate("/");
+                }
+            }, [venue, navigate]);
+            
+            // Обработка изменений формы
+            const handleInputChange = (e) => {
+                const { name, value } = e.target;
+                setBookingData(prev => ({
+                    ...prev,
+                    [name]: value
+                }));
+            };
+            
+            // Подтверждение бронирования
+            const confirmBooking = () => {
+                setShowConfirmation(true);
+            };
+            
+            // Закрыть модальное окно подтверждения
+            const closeConfirmation = () => {
+                setShowConfirmation(false);
+                navigate("/");
+            };
+            
             if (!venue) return null;
             
             return (
                 <div className="fade-in">
                     <div className="detail-header">
-                        <div className="detail-image">{venue.image}</div>
+                        <div className="venue-image detail-image">{venue.image}</div>
                         <h2 className="section-title">{venue.name}</h2>
                         <p className="hint">📍 {venue.location}</p>
                     </div>
@@ -498,127 +528,146 @@
                     <div className="card">
                         <div className="detail-info">
                             <div className="detail-item">
-                                <span className="detail-label">Capacity</span>
+                                <span className="detail-label hint">Capacity</span>
                                 <span className="detail-value">{venue.capacity} people</span>
                             </div>
                             <div className="detail-item">
-                                <span className="detail-label">Price</span>
+                                <span className="detail-label hint">Price</span>
                                 <span className="detail-value">${venue.price}/day</span>
                             </div>
                         </div>
                         
-                        <div className="detail-description">
-                            <h3 className="section-title">Description</h3>
-                            <p>{venue.description}</p>
+                        <div className="booking-form">
+                            <div className="form-group">
+                                <label className="form-label">Full Name</label>
+                                <Input 
+                                    fullWidth
+                                    name="name" 
+                                    value={bookingData.name} 
+                                    onChange={handleInputChange}
+                                    placeholder="Your full name"
+                                />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label className="form-label">Email</label>
+                                <Input 
+                                    fullWidth
+                                    type="email"
+                                    name="email" 
+                                    value={bookingData.email} 
+                                    onChange={handleInputChange}
+                                    placeholder="your.email@example.com"
+                                />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label className="form-label">Phone Number</label>
+                                <Input 
+                                    fullWidth
+                                    type="tel"
+                                    name="phone" 
+                                    value={bookingData.phone} 
+                                    onChange={handleInputChange}
+                                    placeholder="+1 (123) 456-7890"
+                                />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label className="form-label">Event Date</label>
+                                <Input 
+                                    fullWidth
+                                    type="date"
+                                    name="date" 
+                                    value={bookingData.date} 
+                                    onChange={handleInputChange}
+                                />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label className="form-label">Number of Guests</label>
+                                <Input 
+                                    fullWidth
+                                    type="number"
+                                    name="guests" 
+                                    value={bookingData.guests} 
+                                    onChange={handleInputChange}
+                                    min="1"
+                                    max={venue.capacity}
+                                />
+                                <p className="hint">Maximum capacity: {venue.capacity} guests</p>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            );
-        }
-        
-        // Форма бронирования
-        function BookingForm({ venue, bookingData, onChange, onSubmit, onBack }) {
-            if (!venue) return null;
-            
-            return (
-                <div className="fade-in">
-                    <div className="detail-header">
-                        <div className="detail-image">{venue.image}</div>
-                        <h2 className="section-title">Book {venue.name}</h2>
-                        <p className="hint">Complete the form to reserve this venue</p>
                     </div>
                     
-                    <div className="booking-form">
-                        <div className="form-group">
-                            <label className="form-label">Full Name</label>
-                            <input 
-                                type="text" 
-                                className="form-input" 
-                                name="name" 
-                                value={bookingData.name} 
-                                onChange={onChange}
-                                placeholder="Your full name"
-                            />
-                        </div>
-                        
-                        <div className="form-group">
-                            <label className="form-label">Email</label>
-                            <input 
-                                type="email" 
-                                className="form-input" 
-                                name="email" 
-                                value={bookingData.email} 
-                                onChange={onChange}
-                                placeholder="your.email@example.com"
-                            />
-                        </div>
-                        
-                        <div className="form-group">
-                            <label className="form-label">Phone Number</label>
-                            <input 
-                                type="tel" 
-                                className="form-input" 
-                                name="phone" 
-                                value={bookingData.phone} 
-                                onChange={onChange}
-                                placeholder="+1 (123) 456-7890"
-                            />
-                        </div>
-                        
-                        <div className="form-group">
-                            <label className="form-label">Event Date</label>
-                            <input 
-                                type="date" 
-                                className="form-input" 
-                                name="date" 
-                                value={bookingData.date} 
-                                onChange={onChange}
-                            />
-                        </div>
-                        
-                        <div className="form-group">
-                            <label className="form-label">Number of Guests</label>
-                            <input 
-                                type="number" 
-                                className="form-input" 
-                                name="guests" 
-                                value={bookingData.guests} 
-                                onChange={onChange}
-                                min="1"
-                                max={venue.capacity}
-                            />
-                            <p className="hint">Maximum capacity: {venue.capacity} guests</p>
-                        </div>
+                    <div className="fixed-footer">
+                        <Button className="tg-button" onPress={confirmBooking}>
+                            Confirm Booking
+                        </Button>
                     </div>
+                    
+                    {/* Модальное окно подтверждения */}
+                    <Modal isOpen={showConfirmation} onClose={closeConfirmation}>
+                        <ModalContent>
+                            <ModalHeader className="confirmation-title">
+                                Booking Confirmed!
+                            </ModalHeader>
+                            <ModalBody>
+                                <div className="confirmation-icon">✅</div>
+                                <p className="confirmation-text">
+                                    Your reservation for <strong>{venue.name}</strong> on <strong>{bookingData.date || 'selected date'}</strong> has been confirmed.
+                                </p>
+                                <p className="confirmation-text">
+                                    A confirmation email has been sent to <strong>{bookingData.email}</strong>.
+                                </p>
+                            </ModalBody>
+                            <ModalFooter>
+                                <Button className="tg-button" onPress={closeConfirmation}>
+                                    Back to Venues
+                                </Button>
+                            </ModalFooter>
+                        </ModalContent>
+                    </Modal>
                 </div>
             );
         }
         
-        // Подтверждение бронирования
-        function Confirmation({ venue, bookingData, onBack }) {
-            if (!venue) return null;
+        // Роутинг приложения
+        const router = createBrowserRouter([
+            {
+                path: "/",
+                element: <BaseLayout />,
+                children: [
+                    { index: true, element: <Index /> },
+                    { path: "book/:venueId", element: <BookingIndex /> },
+                ],
+            },
+        ]);
+        
+        // Главный компонент приложения
+        function MainApp() {
+            // Инициализация Telegram Web App
+            useEffect(() => {
+                Telegram.WebApp.ready();
+                Telegram.WebApp.expand();
+                
+                // Установка цвета фона
+                document.body.style.backgroundColor = Telegram.WebApp.themeParams.bg_color || '#ffffff';
+            }, []);
             
             return (
-                <div className="fade-in">
-                    <div className="card confirmation-card">
-                        <div className="confirmation-icon">✅</div>
-                        <h2 className="confirmation-title">Booking Confirmed!</h2>
-                        <p className="confirmation-text">
-                            Your reservation for <strong>{venue.name}</strong> on <strong>{bookingData.date || 'selected date'}</strong> has been confirmed.
-                        </p>
-                        <p className="confirmation-text">
-                            A confirmation email has been sent to <strong>{bookingData.email}</strong>.
-                        </p>
-                        <button className="tg-button" onClick={onBack}>
-                            Back to Venues
-                        </button>
-                    </div>
-                </div>
+                <NextUIProvider>
+                    <RouterProvider router={router} />
+                </NextUIProvider>
             );
         }
         
         // Рендеринг приложения
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+        ReactDOM.createRoot(document.getElementById('root')).render(
+            <React.StrictMode>
+                <MainApp />
+            </React.StrictMode>
+        );
         
         // Функция для установки класса темы
         function setThemeClass() {
